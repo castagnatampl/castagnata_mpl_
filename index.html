@@ -1,0 +1,578 @@
+ <!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Festa della Castagna - Photo Booth</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; background-color: #3d1e0d; }
+    
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+    
+    .bg-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    #start-screen { display: flex !important; z-index: 50; }
+    #camera-screen { z-index: 10; background: #231006; }
+    #preview-screen { z-index: 20; background: #2e1509; }
+    #thanks-screen { z-index: 30; background: #3d1e0d; }
+
+    .thanks-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      justify-content: flex-end;
+      padding-bottom: 50px;
+    }
+    
+    .btn-container {
+      position: absolute;
+      bottom: 8%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .btn {
+      width: 82%;
+      max-width: 320px;
+      padding: 16px 24px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #ffffff;
+      background: linear-gradient(135deg, #8a3c14, #542208);
+      border: 2px solid #e89c4a;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+    }
+    .btn:active { transform: scale(0.96); }
+    
+    .btn-secondary {
+      background: rgba(61, 30, 13, 0.85);
+      border-color: #d88032;
+      backdrop-filter: blur(6px);
+    }
+
+    .counter-badge {
+      position: absolute;
+      top: 15px;
+      background: rgba(61, 30, 13, 0.88);
+      backdrop-filter: blur(6px);
+      border: 2px solid #d88032;
+      color: #fceada;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      z-index: 15;
+    }
+    
+    #video { width: 100%; height: 100%; object-fit: cover; }
+    .mirror { transform: scaleX(-1); }
+
+    .filter-normal { filter: none; }
+    .filter-vintage { filter: sepia(0.65) contrast(1.1) brightness(0.9); }
+    
+    .style-selector {
+      position: absolute;
+      top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      z-index: 15;
+      padding: 0 10px;
+      flex-wrap: wrap;
+    }
+
+    .style-btn {
+      background: rgba(61, 30, 13, 0.85);
+      border: 2px solid #d88032;
+      color: #fceada;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+    }
+
+    .style-btn.active {
+      background: #8a3c14;
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(232, 156, 74, 0.8);
+    }
+
+    .challenge-box {
+      position: absolute;
+      top: 65px;
+      width: 90%;
+      max-width: 360px;
+      background: rgba(61, 30, 13, 0.9);
+      backdrop-filter: blur(8px);
+      border: 2px solid #d88032;
+      border-radius: 15px;
+      padding: 10px 14px;
+      z-index: 15;
+      color: #fceada;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .dice-btn {
+      background: #fceada;
+      border: none;
+      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .challenge-text {
+      font-size: 0.85rem;
+      text-align: left;
+      line-height: 1.2;
+      font-weight: 500;
+    }
+    
+    .camera-controls {
+      position: absolute;
+      bottom: 25px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 15;
+      padding: 0 30px;
+    }
+
+    .camera-btn {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: #fceada;
+      border: 5px solid #8a3c14;
+      box-shadow: 0 0 20px rgba(232, 156, 74, 0.7);
+      cursor: pointer;
+    }
+
+    .switch-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(61, 30, 13, 0.85);
+      backdrop-filter: blur(5px);
+      border: 2px solid #d88032;
+      color: #fceada;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #preview-img-container {
+      width: 100%;
+      height: 65%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+
+    #preview-canvas-render {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+
+    .preview-controls {
+      height: 35%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 10px 20px;
+    }
+
+    .dedica-input {
+      width: 90%;
+      max-width: 320px;
+      padding: 12px 18px;
+      font-size: 1rem;
+      border-radius: 25px;
+      border: 2px solid #d88032;
+      background: rgba(61, 30, 13, 0.6);
+      color: #fff;
+      text-align: center;
+      outline: none;
+    }
+    .dedica-input::placeholder { color: rgba(252, 234, 218, 0.7); }
+
+    #loader {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(35, 16, 6, 0.94);
+      color: #fceada;
+      font-size: 1.2rem;
+      font-weight: bold;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 100;
+    }
+    .spinner {
+      border: 5px solid rgba(232, 156, 74, 0.2);
+      border-top: 5px solid #e89c4a;
+      border-radius: 50%;
+      width: 55px; height: 55px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- SCHERMATA INIZIALE -->
+  <div id="start-screen" class="screen">
+    <img src="Fronte.png" class="bg-img" alt="Fronte">
+    <div class="btn-container">
+      <button class="btn" onclick="startCamera()">APRI FOTOCAMERA 📸</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">CARICA DALLA GALLERIA 🖼️</button>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleGalleryUpload(event)">
+
+  <!-- SCHERMATA FOTOCAMERA -->
+  <div id="camera-screen" class="screen">
+    <video id="video" autoplay playsinline class="mirror filter-normal"></video>
+    
+    <div class="counter-badge" id="counter-display">Foto scattate: 0</div>
+
+    <div class="style-selector">
+      <button class="style-btn active" id="btn-normal" onclick="setPhotoStyle('normal')">Normale</button>
+      <button class="style-btn" id="btn-castagne" onclick="setPhotoStyle('castagne')">Cornice Castagne 🌰</button>
+      <button class="style-btn" id="btn-polaroid" onclick="setPhotoStyle('polaroid')">Polaroid 📷</button>
+      <button class="style-btn" id="btn-vintage" onclick="setPhotoStyle('vintage')">Vintage 📜</button>
+    </div>
+
+    <div class="challenge-box">
+      <button class="dice-btn" onclick="rollDice()">🎲</button>
+      <div class="challenge-text" id="challenge-text">Tocca il dado per la sfida foto della Castagnata!</div>
+    </div>
+
+    <div class="camera-controls">
+      <div style="width: 50px;"></div>
+      <button class="camera-btn" onclick="takePhoto()"></button>
+      <button class="switch-btn" onclick="switchCamera()">🔄</button>
+    </div>
+  </div>
+
+  <!-- SCHERMATA ANTEPRIMA ED EDITING -->
+  <div id="preview-screen" class="screen">
+    <div id="preview-img-container">
+      <canvas id="preview-canvas-render"></canvas>
+    </div>
+    <div class="preview-controls">
+      <input type="text" id="user-dedica" class="dedica-input" placeholder="Scrivi una dedica o i nomi..." maxlength="30" oninput="renderFinalPhoto()">
+      <button class="btn" onclick="confirmAndUpload()">CONFERMA E SALVA 💾</button>
+    </div>
+  </div>
+
+  <!-- SCHERMATA DI RINGRAZIAMENTO -->
+  <div id="thanks-screen" class="screen">
+    <img src="Retro.png" class="bg-img" alt="Retro">
+    <div class="thanks-content">
+      <button class="btn" onclick="resetApp()">FAI UN'ALTRA FOTO 📸</button>
+    </div>
+  </div>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <p>Salvataggio nell'album in corso...</p>
+  </div>
+
+  <canvas id="raw-canvas" style="display:none;"></canvas>
+
+  <script>
+    // URL Web App aggiornato per la Castagnata
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx84tT_5yxLhob5Si2M7EIF24fMDYUuCqJ1XJ0h0cmQVgIm2OJEZ2nLNySywRXSSODU/exec";
+
+    let stream = null;
+    let currentFacingMode = "user";
+    let selectedStyle = "normal";
+    let capturedImageObj = null;
+
+    const logoImg = new Image();
+    logoImg.src = "logo.png";
+
+    const challenges = [
+      "Scatta una foto ai rulli delle castagne! 🔄",
+      "Foto mentre addenti il Panfritto caldo! 🥖",
+      "Foto gustando un delizioso Hamburger allo stand! 🍔",
+      "Selfie dolce con una frittella di mele! 🍎",
+      "Foto con le caldarroste fumanti! 🌰",
+      "Foto di gruppo sorridente alla Festa della Castagna! 📸"
+    ];
+
+    function rollDice() {
+      const randomIndex = Math.floor(Math.random() * challenges.length);
+      document.getElementById('challenge-text').innerText = challenges[randomIndex];
+    }
+
+    function updateCounterDisplay() {
+      let count = localStorage.getItem('castagnata_photo_count') || 0;
+      document.getElementById('counter-display').innerText = `Foto scattate: ${count}`;
+    }
+
+    function incrementCounter() {
+      let count = parseInt(localStorage.getItem('castagnata_photo_count') || 0) + 1;
+      localStorage.setItem('castagnata_photo_count', count);
+      updateCounterDisplay();
+    }
+
+    function setPhotoStyle(style) {
+      selectedStyle = style;
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('btn-' + style);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const video = document.getElementById('video');
+      video.className = currentFacingMode === "user" ? "mirror " : "";
+      if (style === 'vintage') {
+        video.classList.add('filter-vintage');
+      } else {
+        video.classList.add('filter-normal');
+      }
+    }
+
+    async function startCamera() {
+      if (stream) { stream.getTracks().forEach(track => track.stop()); }
+      const video = document.getElementById('video');
+      setPhotoStyle(selectedStyle);
+      updateCounterDisplay();
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: currentFacingMode }, 
+          audio: false 
+        });
+        video.srcObject = stream;
+        document.getElementById('start-screen').style.setProperty('display', 'none', 'important');
+        document.getElementById('camera-screen').style.display = 'flex';
+      } catch (err) {
+        alert("Attiva i permessi della fotocamera nel browser!");
+      }
+    }
+
+    function switchCamera() {
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+      startCamera();
+    }
+
+    function goToPreviewScreen(imgObj) {
+      if (stream) { stream.getTracks().forEach(track => track.stop()); }
+      capturedImageObj = imgObj;
+
+      document.getElementById('start-screen').style.setProperty('display', 'none', 'important');
+      document.getElementById('camera-screen').style.display = 'none';
+      document.getElementById('preview-screen').style.display = 'flex';
+      
+      renderFinalPhoto();
+    }
+
+    function takePhoto() {
+      const video = document.getElementById('video');
+      const rawCanvas = document.getElementById('raw-canvas');
+      const ctx = rawCanvas.getContext('2d');
+
+      let w = video.videoWidth || 1080;
+      let h = video.videoHeight || 1920;
+
+      rawCanvas.width = w;
+      rawCanvas.height = h;
+
+      if (currentFacingMode === "user") {
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+      }
+
+      ctx.drawImage(video, 0, 0, w, h);
+
+      const img = new Image();
+      img.onload = function() {
+        goToPreviewScreen(img);
+      }
+      img.src = rawCanvas.toDataURL('image/png');
+    }
+
+    function handleGalleryUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          goToPreviewScreen(img);
+        }
+        img.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    }
+
+    function drawChestnutFrame(ctx, w, h) {
+      const borderWidth = Math.round(w * 0.05);
+      ctx.fillStyle = "#3d1e0d";
+      ctx.fillRect(0, 0, w, borderWidth);
+      ctx.fillRect(0, h - borderWidth, w, borderWidth);
+      ctx.fillRect(0, 0, borderWidth, h);
+      ctx.fillRect(w - borderWidth, 0, borderWidth, h);
+
+      ctx.strokeStyle = "#e89c4a";
+      ctx.lineWidth = Math.round(w * 0.008);
+      ctx.strokeRect(borderWidth * 0.6, borderWidth * 0.6, w - (borderWidth * 1.2), h - (borderWidth * 1.2));
+
+      if (logoImg.complete && logoImg.naturalWidth !== 0) {
+        const iconSize = borderWidth * 1.8;
+        ctx.drawImage(logoImg, 10, 10, iconSize, iconSize);
+        ctx.drawImage(logoImg, w - iconSize - 10, 10, iconSize, iconSize);
+      }
+    }
+
+    function renderFinalPhoto() {
+      if (!capturedImageObj) return;
+
+      const canvas = document.getElementById('preview-canvas-render');
+      const ctx = canvas.getContext('2d');
+      const dedica = document.getElementById('user-dedica').value.trim();
+
+      let w = capturedImageObj.width;
+      let h = capturedImageObj.height;
+
+      let extraBottom = (selectedStyle === 'polaroid' || dedica !== "") ? Math.round(w * 0.25) : 0;
+
+      canvas.width = w;
+      canvas.height = h + extraBottom;
+
+      if (selectedStyle === 'polaroid' || dedica !== "") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      if (selectedStyle === 'vintage') {
+        ctx.filter = 'sepia(0.65) contrast(1.1) brightness(0.9)';
+      }
+
+      ctx.drawImage(capturedImageObj, 0, 0);
+      ctx.filter = 'none';
+
+      if (selectedStyle === 'castagne') {
+        drawChestnutFrame(ctx, w, h);
+      }
+
+      // Disegno sicuro del LOGO
+      function drawLogoNow() {
+        if (logoImg.complete && logoImg.naturalWidth !== 0) {
+          const logoWidth = Math.round(w * 0.22);
+          const logoHeight = Math.round(logoWidth * (logoImg.naturalHeight / logoImg.naturalWidth));
+          const margin = Math.round(w * 0.03);
+          ctx.drawImage(logoImg, w - logoWidth - margin, h - logoHeight - margin, logoWidth, logoHeight);
+        }
+      }
+
+      if (logoImg.complete && logoImg.naturalWidth !== 0) {
+        drawLogoNow();
+      } else {
+        logoImg.onload = function() {
+          drawLogoNow();
+        };
+      }
+
+      if (selectedStyle === 'polaroid' || dedica !== "") {
+        ctx.fillStyle = "#3d1e0d";
+        ctx.font = `bold ${Math.round(canvas.width * 0.042)}px sans-serif`;
+        ctx.textAlign = "center";
+        
+        if (dedica !== "") {
+          ctx.fillText(dedica, canvas.width / 2, h + ((canvas.height - h) / 2) + 5);
+        }
+      }
+    }
+
+    function confirmAndUpload() {
+      const canvas = document.getElementById('preview-canvas-render');
+      const imageData = canvas.toDataURL('image/png');
+
+      incrementCounter();
+
+      document.getElementById('preview-screen').style.display = 'none';
+      document.getElementById('loader').style.display = 'flex';
+
+      // 1. Download locale
+      const a = document.createElement('a');
+      a.href = imageData;
+      a.download = `Festa_della_Castagna_${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // 2. Invio a Google Drive
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify({ image: imageData })
+      })
+      .then(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('thanks-screen').style.display = 'flex';
+      })
+      .catch((err) => {
+        console.error("Errore invio Drive:", err);
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('thanks-screen').style.display = 'flex';
+      });
+    }
+
+    function resetApp() {
+      document.getElementById('thanks-screen').style.display = 'none';
+      document.getElementById('preview-screen').style.display = 'none';
+      document.getElementById('camera-screen').style.display = 'none';
+      document.getElementById('start-screen').style.setProperty('display', 'flex', 'important');
+      document.getElementById('user-dedica').value = "";
+      capturedImageObj = null;
+    }
+  </script>
+</body>
+</html>
